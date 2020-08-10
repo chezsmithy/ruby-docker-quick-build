@@ -1,0 +1,66 @@
+# All containers start with RAILS_ENV Development
+# A test container is started too with RAILS_ENV Test for Cucumber and Rspecs
+version: '3.7'
+
+services:
+  # Run your tests in this container
+  testrunner:
+    stdin_open: true
+    tty: true
+    image: my_image_base:latest
+    command: ["./boot.sh", "spin"]
+    volumes:
+      - .:/home/appuser/project:cached
+      - /home/appuser/project/log/
+      - /home/appuser/project/tmp/
+    env_file:
+      - config/env-dev
+    environment:
+      - RAILS_ENV=test
+      - RACK_ENV=test
+    networks:
+      local:
+        aliases:
+          - testrunner
+
+  web:
+    stdin_open: true
+    tty: true
+    image: my_image_base:latest
+    command: ["./boot.sh", "web"]
+    volumes:
+      - .:/home/appuser/project:cached
+      - /home/appuser/project/log/
+      - /home/appuser/project/tmp/
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    env_file:
+      - config/env-dev
+    environment:
+      # Make it easier to debug using pry
+      WEB_CONCURRENCY: 1
+    networks:
+      local:
+        aliases:
+          - web
+
+  worker:
+    stdin_open: true
+    tty: true
+    image: my_image_base:latest
+    command: ["./boot.sh", "worker"]
+    volumes:
+      - .:/home/appuser/project:cached
+      - /home/appuser/project/log/
+      - /home/appuser/project/tmp/
+    env_file:
+      - config/env-dev
+    networks:
+      local:
+        aliases:
+          - worker
+
+networks:
+  local:
